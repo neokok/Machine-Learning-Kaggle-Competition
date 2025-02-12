@@ -1,7 +1,5 @@
 # Kaggle Competition
 
-I finished first in a 50+ person machine learning competition on Kaggle. The leaderboard can be found here: https://www.kaggle.com/competitions/final-project-stats-415-fall-2023/leaderboard 
- 
  The method that I used to predict test scores was quite simple. First, I created a new predictor that averages the 50 SRP values for each student. Then, I reclassified the numeric predictors of teacher evaluation, student evaluation, and district as factors. The response value of test scores was fit against all of these predictors using a multivariate linear model with an interaction term between the district and student evaluation variables. This resulted in an in-sample R2 of 0.8944 and an initial out-of-sample R2 of 0.8916, the highest ranking in the class.
 
  The thought process behind creating the average SRP values stems from the idea that 50 extra variables would increase the chance of overfitting to our data and reducing out-of-sample performance. Therefore, I averaged the 50 values to provide us with a simple summary statistic, which eventually performed considerably well for our model. The district variable was numbered one through seven, although the specific numbers assigned to them did not indicate any difference between them, so that variable was factored. Teacher and student evaluation could have been left has a numeric variable, although converting both to factors resulted in increased in-sample performance so it made the final model. 
