@@ -1,0 +1,185 @@
+---
+title: "415 Final Project"
+author: "Neo Kok"
+date: "2023-11-13"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+X_train <- read.csv("data/X_train.csv", header=TRUE)
+y_train <- read.csv("data/y_train.csv", header=TRUE)
+y_sample <- read.csv("data/y_sample.csv", header=TRUE)
+X_test <- read.csv("data/X_test.csv", header=TRUE)
+library(glmnet)
+library(caret)
+library(tidyverse)
+```
+
+## Data
+```{r}
+X_train <- read.csv("data/X_train.csv", header=TRUE)
+y_train <- read.csv("data/y_train.csv", header=TRUE)
+y_sample <- read.csv("data/y_sample.csv", header=TRUE)
+X_test <- read.csv("data/X_test.csv", header=TRUE)
+```
+
+## Feature engineering
+```{r}
+# Create average of SRP variable
+X_train$average_srp <- rowMeans(X_train[, grepl("^SRP", names(X_train))], na.rm = TRUE)
+
+# Factorize district, self_eval, and teacher_eval
+X_train$district <- as.factor(X_train$district)
+X_train$self_eval <- as.factor(X_train$self_eval)
+X_train$teacher_eval <- as.factor(X_train$teacher_eval)
+X_train$y = y_train$y
+```
+
+## Model Creation
+```{r}
+# Create multiple variable linear model with interaction term
+lm = lm(y_train$y ~ self_eval * district + teacher_eval + average_srp, data = X_train)  
+```
+
+## Model Evaluation
+```{r}
+summary(lm)$r.squared
+```
+
+
+## Model Predictions
+```{r}
+# Feature engineering for test sample
+X_test$average_srp <- rowMeans(X_test[, grepl("^SRP", names(X_test))], na.rm = TRUE)
+X_test$district <- as.factor(X_test$district)
+X_test$self_eval <- as.factor(X_test$self_eval)
+X_test$teacher_eval <- as.factor(X_test$teacher_eval)
+
+# Predict test sample using model
+predictions <- predict(lm, newdata = X_test)
+y_test = data.frame(SEQN = X_test$SEQN, y = predictions)
+
+# Save out predictions
+#write.csv(y_test, "y_test.csv", row.names = FALSE)
+```
+
+
+
+
+
+
+
+
+
+<!-- # The following models are tested but are not as effective as the original model -->
+<!-- ```{r} -->
+<!-- # Create interaction terms for the decision tree -->
+<!-- # Create interaction terms for the decision tree -->
+<!-- X_train$self_eval <- as.numeric(X_train$self_eval) -->
+<!-- X_train$district <- as.factor(X_train$district) -->
+<!-- X_train$teacher_eval <- as.numeric(X_train$teacher_eval) -->
+
+<!-- X_train$interaction_term <- as.factor(paste(X_train$self_eval, X_train$district, sep = "_")) -->
+
+<!-- # Load necessary library -->
+<!-- library(randomForest) -->
+
+<!-- # Random forest -->
+<!-- rf_model <- randomForest(y ~ interaction_term + (teacher_eval) + average_srp, data = X_train) -->
+
+<!-- # Predictions on training data -->
+<!-- X_test$interaction_term <- as.factor(paste(X_test$self_eval, X_test$district, sep = "_")) -->
+<!-- rf_predictions <- predict(rf_model, newdata = X_test) -->
+
+
+<!-- y_test = data.frame(SEQN = X_test$SEQN, y = rf_predictions) -->
+<!-- #write.csv(y_test, "y_test.csv", row.names = FALSE) -->
+
+
+<!-- # Calculate in-sample R-squared -->
+<!-- in_sample_r_squared_rf <- 1 - sum((X_train$y - rf_predictions)^2) / sum((X_train$y - mean(X_train$y))^2) -->
+<!-- print(paste("In-sample R-squared (Random Forest):", round(in_sample_r_squared_rf, 4))) -->
+
+
+<!-- ``` -->
+<!-- ```{r} -->
+<!-- # Load necessary library -->
+<!-- library(xgboost) -->
+
+
+<!-- # Convert categorical variables to factors (if not already done) -->
+<!-- X_train$self_eval <- as.numeric(X_train$self_eval) -->
+<!-- X_train$district <- as.factor(X_train$district) -->
+<!-- X_train$teacher_eval <- as.numeric(X_train$teacher_eval) -->
+
+
+<!-- # One-hot encode categorical variables -->
+<!-- X_train_encoded <- model.matrix(~ self_eval + district + teacher_eval + average_srp - 1, data = X_train) -->
+
+<!-- # Gradient boosting (XGBoost) -->
+<!-- xgb_model <- xgboost(data = as.matrix(X_train_encoded), -->
+<!--                      label = X_train$y, -->
+<!--                      max_depth = 3, -->
+<!--                      nrounds = 100, -->
+<!--                      objective = "reg:squarederror", -->
+<!--                      eta = 0.1) -->
+
+<!-- X_test$self_eval <- as.numeric(X_test$self_eval) -->
+<!-- X_test$district <- as.factor(X_test$district) -->
+<!-- X_test$teacher_eval <- as.numeric(X_test$teacher_eval) -->
+
+<!-- # One-hot encode categorical variables -->
+<!-- X_test_encoded <- model.matrix(~ self_eval + district + teacher_eval + average_srp - 1, data = X_test) -->
+<!-- xgb_predictions <- predict(xgb_model, as.matrix(X_test_encoded)) -->
+
+<!-- y_test = data.frame(SEQN = X_test$SEQN, y = xgb_predictions) -->
+<!-- #write.csv(y_test, "y_test.csv", row.names = FALSE) -->
+
+
+<!-- # Calculate in-sample R-squared -->
+<!-- in_sample_r_squared_xgb <- 1 - sum((X_train$y - xgb_predictions)^2) / sum((X_train$y - mean(X_train$y))^2) -->
+<!-- print(paste("In-sample R-squared (XGBoost):", round(in_sample_r_squared_xgb, 4))) -->
+
+<!-- ``` -->
+
+
+<!-- ```{r} -->
+<!-- X_test$average_srp <- rowMeans(X_test[, grepl("^SRP", names(X_test))], na.rm = TRUE) -->
+<!-- X_test$district <- as.factor(X_test$district) -->
+<!-- X_test$self_eval <- as.factor(X_test$self_eval) -->
+<!-- X_test$self_eval <- as.factor(X_test$teacher_eval) -->
+
+<!-- predictions <- predict(lm, newdata = X_test) -->
+<!-- y_test = data.frame(SEQN = X_test$SEQN, y = predictions) -->
+
+<!-- #write.csv(y_test, "y_test.csv", row.names = FALSE) -->
+<!-- ``` -->
+
+
+```{r, include = FALSE}
+ # X_train$district = as.factor(X_train$district)
+ # X_train <- as.matrix(X_train[, c(2:54)])
+ # 
+ # 
+ # enet_model <- cv.glmnet(X_train, y_train$y, alpha = 1)  # Use alpha = 0.5 for elastic net (combination of L1 and L2 regularization)
+ # 
+ # # Display the R-squared for the model
+ # rsq = 1 - enet_model$cvm/var(y_train$y)
+ # rsquared <- 1 - enet_model$cvm[which.min(enet_model$cvm)]
+ # cat("R-squared:", rsquared, "\n")
+ # 
+ # # Assuming your test dataset is named 'X_test'
+ # # Combine predictor variables in the test dataset
+ # X_test <- as.matrix(X_test[, c("self_eval", "district", "teacher_eval", "average_srp")])
+ # 
+ # # Predictions using the Elastic Net model
+ # predictions2 <- predict(enet_model, newx = X_test, s = enet_model$lambda.min)
+ # 
+ # 
+ # 
+ # y_test = as.data.frame(y_test)
+ # y_test$y = as.vector(predictions2)
+ # #write.csv(y_test, "y_test.csv", row.names = FALSE)
+```
+
